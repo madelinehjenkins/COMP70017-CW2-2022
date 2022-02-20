@@ -12,7 +12,7 @@ contract TicTacToe {
      1 - players[0]'s turn
      2 - players[1]'s turn
      */
-    uint public turn = 1;
+    uint256 public turn = 1;
 
     /**
      status
@@ -21,7 +21,7 @@ contract TicTacToe {
      2 - players[1] won
      3 - draw
      */
-    uint public status;
+    uint256 public status;
 
     /**
     board status
@@ -29,26 +29,35 @@ contract TicTacToe {
      3    4    5
      6    7    8
      */
-    uint[9] private board;
+    uint256[9] private board;
 
     /**
-      * @dev Deploy the contract to create a new game
-      * @param opponent The address of player2
-      **/
+     * @dev Deploy the contract to create a new game
+     * @param opponent The address of player2
+     **/
     constructor(address opponent) public {
         require(msg.sender != opponent, "No self play");
         players = [msg.sender, opponent];
     }
 
     /**
-      * @dev Check a, b, c in a line are the same
-      * _threeInALine doesn't check if a, b, c are in a line
-      * @param a position a
-      * @param b position b
-      * @param c position c
-      **/    
-    function _threeInALine(uint a, uint b, uint c) private view returns (bool){
+     * @dev Check a, b, c in a line are the same
+     * _threeInALine doesn't check if a, b, c are in a line
+     * @param a position a
+     * @param b position b
+     * @param c position c
+     **/
+    function _threeInALine(
+        uint256 a,
+        uint256 b,
+        uint256 c
+    ) private view returns (bool) {
         /*Please complete the code here.*/
+        bool inALine = false;
+        if (board[a] == board[b] && board[b] == board[c]) {
+            inALine = true;
+        }
+        return inALine;
     }
 
     /**
@@ -56,8 +65,38 @@ contract TicTacToe {
      * @param pos the position the player places at
      * @return the status of the game
      */
-    function _getStatus(uint pos) private view returns (uint) {
+    function _getStatus(uint256 pos) private view returns (uint256) {
         /*Please complete the code here.*/
+        uint256 nextStatus = 0;
+
+        /* check horizontal wins */
+        if (_threeInALine(0, 1, 2)) {
+            nextStatus = board[0];
+        } else if (_threeInALine(3, 4, 5)) {
+            nextStatus = board[3];
+        } else if (_threeInALine(6, 7, 8)) {
+            nextStatus = board[6];
+
+            /* check vertical wins */
+        } else if (_threeInALine(0, 3, 6)) {
+            nextStatus = board[0];
+        } else if (_threeInALine(1, 4, 7)) {
+            nextStatus = board[1];
+        } else if (_threeInALine(2, 5, 8)) {
+            nextStatus = board[2];
+
+            /* check diagonal wins */
+        } else if (_threeInALine(0, 4, 8)) {
+            nextStatus = board[0];
+        } else if (_threeInALine(2, 4, 6)) {
+            nextStatus = board[2];
+
+            /* else draw */
+        } else {
+            nextStatus = 3;
+        }
+
+        return nextStatus;
     }
 
     /**
@@ -65,8 +104,11 @@ contract TicTacToe {
      * update the status of the game after a player moving
      * @param pos the position the player places at
      */
-    modifier _checkStatus(uint pos) {
+    modifier _checkStatus(uint256 pos) {
         /*Please complete the code here.*/
+        require(status == 0);
+        _;
+        status = _getStatus(pos);
     }
 
     /**
@@ -74,7 +116,14 @@ contract TicTacToe {
      * @return true if it's msg.sender's turn otherwise false
      */
     function myTurn() public view returns (bool) {
-       /*Please complete the code here.*/
+        /*Please complete the code here.*/
+        bool senderTurn = false;
+        if (turn == 1 && players[0] == msg.sender) {
+            senderTurn = true;
+        } else if (turn == 2 && players[1] == msg.sender) {
+            senderTurn = true;
+        }
+        return senderTurn;
     }
 
     /**
@@ -82,7 +131,14 @@ contract TicTacToe {
      * update the turn after a move
      */
     modifier _myTurn() {
-      /*Please complete the code here.*/
+        /*Please complete the code here.*/
+        require(myTurn() == true);
+        _;
+        if (turn == 1) {
+            turn = 2;
+        } else {
+            turn = 1;
+        }
     }
 
     /**
@@ -90,23 +146,35 @@ contract TicTacToe {
      * @param pos the position the player places at
      * @return true if valid otherwise false
      */
-    function validMove(uint pos) public view returns (bool) {
-      /*Please complete the code here.*/
+    function validMove(uint256 pos) public view returns (bool) {
+        /*Please complete the code here.*/
+        bool valid = true;
+        if (board[pos] == 1 || board[pos] == 2) {
+            valid = false;
+        }
+        return valid;
     }
 
     /**
      * @dev ensure a move is valid
      * @param pos the position the player places at
      */
-    modifier _validMove(uint pos) {
-      /*Please complete the code here.*/
+    modifier _validMove(uint256 pos) {
+        /*Please complete the code here.*/
+        require(validMove(pos) == true);
+        _;
     }
 
     /**
      * @dev a player makes a move
      * @param pos the position the player places at
      */
-    function move(uint pos) public _validMove(pos) _checkStatus(pos) _myTurn {
+    function move(uint256 pos)
+        public
+        _validMove(pos)
+        _checkStatus(pos)
+        _myTurn
+    {
         board[pos] = turn;
     }
 
@@ -114,7 +182,7 @@ contract TicTacToe {
      * @dev show the current board
      * @return board
      */
-    function showBoard() public view returns (uint[9]) {
-      return board;
+    function showBoard() public view returns (uint256[9]) {
+        return board;
     }
 }
